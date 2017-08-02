@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@thomascheng/canvas-utils": "0.0.9",
     "react-scripts": "1.0.10"
   },
   "scripts": {

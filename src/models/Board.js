@@ -1,25 +1,33 @@
 import Voronoi from "voronoi/rhill-voronoi-core";
 import find from "lodash/find";
 import Dot from "./Dot";
+import random from "lodash/random";
 
 const THRESHOLD = 15;
-const distance = (a, b) => Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2);
+const NUM_DOTS = 7;
+const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
   constructor({ width, height }) {
-    this.dots = [];
     this.width = width;
     this.height = height;
     this.voronoi = new Voronoi();
     this.selected = null;
+    this.dots = this._generateRandomDots(NUM_DOTS);
+    this.virtualDots = this._generateRandomDots(NUM_DOTS);
   }
 
-  handleClick = ({ x, y }) => {
-    if (this.selected) {
-      return;
+  _generateRandomDots = num => {
+    const dots = [];
+    for (let i = 0; i < num; i++) {
+      dots.push(
+        new Dot({
+          x: random(THRESHOLD, this.width - THRESHOLD),
+          y: random(THRESHOLD, this.height - THRESHOLD)
+        })
+      );
     }
-
-    this.dots.push(new Dot({ x, y }));
+    return dots;
   };
 
   handleMouseDown = ({ x, y }) => {
@@ -36,13 +44,15 @@ class Board {
   };
 
   handleMouseUp = () => {
-    setTimeout(() => { this.selected = null; }, 1);
+    setTimeout(() => {
+      this.selected = null;
+    }, 1);
   };
 
   render = context => {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
-    const sites = this.dots.map(dot => ({ x: dot.x, y: dot.y }));
-    const diagram = this.voronoi.compute(sites, box);
+    const diagram = this.voronoi.compute(this.dots, box);
+    const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
 
     diagram.edges.filter(edge => edge.lSite && edge.rSite).forEach(edge => {
       const { va, vb } = edge;
@@ -52,6 +62,17 @@ class Board {
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
       context.strokeStyle = "#000";
+      context.stroke();
+    });
+
+    virtualDiagram.edges.filter(edge => edge.lSite && edge.rSite).forEach(edge => {
+      const { va, vb } = edge;
+
+      context.beginPath();
+      context.moveTo(va.x, va.y);
+      context.lineTo(vb.x, vb.y);
+      context.lineWidth = 1;
+      context.strokeStyle = "#aaa";
       context.stroke();
     });
 

@@ -1,14 +1,20 @@
-import { Canvas, Circle } from "@thomascheng/canvas-utils";
+import { Canvas } from "@thomascheng/canvas-utils";
+import Board from "./models/Board";
 
 const rootEl = document.getElementById("root");
+const touchEl = document.getElementById("touch");
 
 const canvas = new Canvas(rootEl);
+const board = new Board({
+  width: window.innerWidth,
+  height: window.innerHeight
+});
 
-canvas.add(new Circle({
-  x: 100,
-  y: 100,
-  radius: 3,
-  fill: "#000"
-}));
+canvas.add(board);
+
+touchEl.addEventListener("click", evt => {
+  board.handleClick({ x: evt.clientX, y: evt.clientY });
+  canvas.render();
+});
 
 canvas.render();

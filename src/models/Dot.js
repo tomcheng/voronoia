@@ -10,6 +10,8 @@ class Dot {
   }
 
   render = context => {
+    this.circle.x = this.x;
+    this.circle.y = this.y;
     this.circle.render(context);
   };
 }

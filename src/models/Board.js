@@ -1,5 +1,9 @@
-import Dot from "./Dot";
 import Voronoi from "voronoi/rhill-voronoi-core";
+import find from "lodash/find";
+import Dot from "./Dot";
+
+const THRESHOLD = 15;
+const distance = (a, b) => Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2);
 
 class Board {
   constructor({ width, height }) {
@@ -7,10 +11,32 @@ class Board {
     this.width = width;
     this.height = height;
     this.voronoi = new Voronoi();
+    this.selected = null;
   }
 
   handleClick = ({ x, y }) => {
+    if (this.selected) {
+      return;
+    }
+
     this.dots.push(new Dot({ x, y }));
+  };
+
+  handleMouseDown = ({ x, y }) => {
+    this.selected = find(this.dots, dot => distance(dot, { x, y }) < THRESHOLD);
+  };
+
+  handleMouseMove = ({ x, y }) => {
+    if (!this.selected) {
+      return;
+    }
+
+    this.selected.x = x;
+    this.selected.y = y;
+  };
+
+  handleMouseUp = () => {
+    setTimeout(() => { this.selected = null; }, 1);
   };
 
   render = context => {

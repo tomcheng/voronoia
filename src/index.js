@@ -17,4 +17,17 @@ touchEl.addEventListener("click", evt => {
   canvas.render();
 });
 
+touchEl.addEventListener("mousedown", evt => {
+  board.handleMouseDown({ x: evt.clientX, y: evt.clientY });
+});
+
+touchEl.addEventListener("mousemove", evt => {
+  board.handleMouseMove({ x: evt.clientX, y: evt.clientY });
+  canvas.render();
+});
+
+touchEl.addEventListener("mouseup", () => {
+  board.handleMouseUp();
+});
+
 canvas.render();

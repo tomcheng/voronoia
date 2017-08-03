@@ -25,4 +25,34 @@ touchEl.addEventListener("mouseup", () => {
   board.handleMouseUp();
 });
 
+touchEl.addEventListener("touchstart", evt => {
+  evt.preventDefault();
+  board.handleTouchStart(
+    Array.from(evt.changedTouches).map(touch => ({
+      x: touch.clientX,
+      y: touch.clientY,
+      id: touch.identifier
+    }))
+  );
+});
+
+touchEl.addEventListener("touchmove", evt => {
+  evt.preventDefault();
+  board.handleTouchMove(
+    Array.from(evt.changedTouches).map(touch => ({
+      x: touch.clientX,
+      y: touch.clientY,
+      id: touch.identifier
+    }))
+  );
+  canvas.render();
+});
+
+touchEl.addEventListener("touchend", evt => {
+  evt.preventDefault();
+  board.handleTouchEnd(
+    Array.from(evt.changedTouches).map(touch => ({ id: touch.identifier }))
+  );
+});
+
 canvas.render();

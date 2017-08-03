@@ -4,7 +4,7 @@ import Dot from "./Dot";
 import random from "lodash/random";
 
 const THRESHOLD = 15;
-const NUM_DOTS = 7;
+const NUM_DOTS = 10;
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
@@ -12,7 +12,8 @@ class Board {
     this.width = width;
     this.height = height;
     this.voronoi = new Voronoi();
-    this.selected = null;
+    this.touchSelected = {};
+    this.mouseSelected = [];
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
   }
@@ -31,22 +32,73 @@ class Board {
   };
 
   handleMouseDown = ({ x, y }) => {
-    this.selected = find(this.dots, dot => distance(dot, { x, y }) < THRESHOLD);
-  };
+    const selected = find(
+      this.dots,
+      dot => distance(dot, { x, y }) < THRESHOLD
+    );
 
-  handleMouseMove = ({ x, y }) => {
-    if (!this.selected) {
+    if (!selected) {
       return;
     }
 
-    this.selected.x = x;
-    this.selected.y = y;
+    this.mouseSelected.push({
+      startX: selected.x,
+      startY: selected.y,
+      dot: selected
+    });
+
+    this.startX = x;
+    this.startY = y;
+    this.moved = false;
+    this.mouseDown = true;
+  };
+
+  handleMouseMove = ({ x, y }) => {
+    if (!this.mouseSelected.length || !this.mouseDown) {
+      return;
+    }
+
+    if (distance({ x, y }, { x: this.startX, y: this.startY }) > THRESHOLD) {
+      this.moved = true;
+    }
+
+    this.mouseSelected.forEach(({ startX, startY, dot }) => {
+      dot.x = startX + x - this.startX;
+      dot.y = startY + y - this.startY;
+    });
   };
 
   handleMouseUp = () => {
-    setTimeout(() => {
-      this.selected = null;
-    }, 1);
+    this.mouseDown = false;
+    if (this.moved) {
+      this.mouseSelected = [];
+    }
+  };
+
+  handleTouchStart = touches => {
+    touches.forEach(({ x, y, id }) => {
+      this.touchSelected[id] = find(
+        this.dots,
+        dot => distance(dot, { x, y }) < THRESHOLD
+      );
+    });
+  };
+
+  handleTouchMove = touches => {
+    touches.forEach(({ x, y, id }) => {
+      if (this.touchSelected[id]) {
+        this.touchSelected[id].x = x;
+        this.touchSelected[id].y = y;
+      }
+    });
+  };
+
+  handleTouchEnd = touches => {
+    touches.forEach(({ id }) => {
+      if (this.touchSelected[id]) {
+        this.touchSelected[id] = null;
+      }
+    });
   };
 
   render = context => {
@@ -65,16 +117,18 @@ class Board {
       context.stroke();
     });
 
-    virtualDiagram.edges.filter(edge => edge.lSite && edge.rSite).forEach(edge => {
-      const { va, vb } = edge;
+    virtualDiagram.edges
+      .filter(edge => edge.lSite && edge.rSite)
+      .forEach(edge => {
+        const { va, vb } = edge;
 
-      context.beginPath();
-      context.moveTo(va.x, va.y);
-      context.lineTo(vb.x, vb.y);
-      context.lineWidth = 1;
-      context.strokeStyle = "#aaa";
-      context.stroke();
-    });
+        context.beginPath();
+        context.moveTo(va.x, va.y);
+        context.lineTo(vb.x, vb.y);
+        context.lineWidth = 1;
+        context.strokeStyle = "#aaa";
+        context.stroke();
+      });
 
     this.dots.forEach(dot => {
       dot.render(context);

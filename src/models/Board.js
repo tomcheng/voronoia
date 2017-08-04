@@ -2,9 +2,10 @@ import Voronoi from "voronoi/rhill-voronoi-core";
 import find from "lodash/find";
 import Dot from "./Dot";
 import random from "lodash/random";
+import { linesAreCollinear } from "../utils/geometry"
 
 const THRESHOLD = 15;
-const NUM_DOTS = 10;
+const NUM_DOTS = 7;
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
@@ -105,30 +106,32 @@ class Board {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
     const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
+    const edges = diagram.edges.filter(e => e.lSite && e.rSite);
+    const virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
 
-    diagram.edges.filter(edge => edge.lSite && edge.rSite).forEach(edge => {
+    edges.forEach(edge => {
+      const { va, vb } = edge;
+
+      const matches = virtualEdges.some(e => linesAreCollinear(e, edge));
+
+      context.beginPath();
+      context.moveTo(va.x, va.y);
+      context.lineTo(vb.x, vb.y);
+      context.lineWidth = 1;
+      context.strokeStyle = matches ? "red" : "#000";
+      context.stroke();
+    });
+
+    virtualEdges.forEach(edge => {
       const { va, vb } = edge;
 
       context.beginPath();
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
-      context.strokeStyle = "#000";
+      context.strokeStyle = "#aaa";
       context.stroke();
     });
-
-    virtualDiagram.edges
-      .filter(edge => edge.lSite && edge.rSite)
-      .forEach(edge => {
-        const { va, vb } = edge;
-
-        context.beginPath();
-        context.moveTo(va.x, va.y);
-        context.lineTo(vb.x, vb.y);
-        context.lineWidth = 1;
-        context.strokeStyle = "#aaa";
-        context.stroke();
-      });
 
     this.dots.forEach(dot => {
       dot.render(context);

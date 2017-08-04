@@ -2,10 +2,10 @@ import Voronoi from "voronoi/rhill-voronoi-core";
 import find from "lodash/find";
 import Dot from "./Dot";
 import random from "lodash/random";
-import { linesAreCollinear } from "../utils/geometry"
+import { linesAreCollinear, getMirror } from "../utils/geometry";
 
 const THRESHOLD = 15;
-const NUM_DOTS = 7;
+const NUM_DOTS = 20;
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
@@ -15,8 +15,17 @@ class Board {
     this.voronoi = new Voronoi();
     this.touchSelected = {};
     this.mouseSelected = null;
+    this.matchedEdges = [];
+    this.activeEdges = [];
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
+
+    const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
+    const diagram = this.voronoi.compute(this.dots, box);
+    const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
+
+    this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
+    this.virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
   }
 
   _generateRandomDots = num => {
@@ -32,6 +41,32 @@ class Board {
     return dots;
   };
 
+  _updateEdges = () => {
+    const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
+    const diagram = this.voronoi.compute(this.dots, box);
+    this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
+  };
+
+  _updateConstraints = () => {
+    this.matchedEdges = this.edges.filter(e =>
+      this.virtualEdges.some(ve => linesAreCollinear(e, ve))
+    );
+  };
+
+  _updateCloseDots = () => {
+    this.dots.forEach(dot => {
+      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < 5);
+
+      if (matchedDot) {
+        dot.x = matchedDot.x;
+        dot.y = matchedDot.y;
+        dot.matched = true;
+      } else {
+        dot.matched = false;
+      }
+    })
+  };
+
   handleMouseDown = ({ x, y }) => {
     const selected = find(
       this.dots,
@@ -43,58 +78,42 @@ class Board {
     }
 
     this.mouseSelected = selected;
+    this.activeEdges = this.matchedEdges.filter(
+      edge => edge.lSite === selected || edge.rSite === selected
+    );
   };
 
   handleMouseMove = ({ x, y }) => {
     if (!this.mouseSelected) {
       return;
     }
-
     this.mouseSelected.x = x;
     this.mouseSelected.y = y;
+    this.activeEdges.forEach(edge => {
+      const otherDot =
+        edge.lSite === this.mouseSelected ? edge.rSite : edge.lSite;
+      const mirror = getMirror({
+        point: { x: this.mouseSelected.x, y: this.mouseSelected.y },
+        line: { va: edge.va, vb: edge.vb }
+      });
+      otherDot.x = mirror.x;
+      otherDot.y = mirror.y;
+    });
+    this._updateEdges();
   };
 
   handleMouseUp = () => {
     this.mouseSelected = null;
-  };
-
-  handleTouchStart = touches => {
-    touches.forEach(({ x, y, id }) => {
-      this.touchSelected[id] = find(
-        this.dots,
-        dot => distance(dot, { x, y }) < THRESHOLD
-      );
-    });
-  };
-
-  handleTouchMove = touches => {
-    touches.forEach(({ x, y, id }) => {
-      if (this.touchSelected[id]) {
-        this.touchSelected[id].x = x;
-        this.touchSelected[id].y = y;
-      }
-    });
-  };
-
-  handleTouchEnd = touches => {
-    touches.forEach(({ id }) => {
-      if (this.touchSelected[id]) {
-        this.touchSelected[id] = null;
-      }
-    });
+    this._updateCloseDots();
+    this._updateEdges();
+    this._updateConstraints();
   };
 
   render = context => {
-    const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
-    const diagram = this.voronoi.compute(this.dots, box);
-    const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
-    const edges = diagram.edges.filter(e => e.lSite && e.rSite);
-    const virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
-
-    edges.forEach(edge => {
+    this.edges.forEach(edge => {
       const { va, vb } = edge;
 
-      const matches = virtualEdges.some(e => linesAreCollinear(e, edge));
+      const matches = this.virtualEdges.some(e => linesAreCollinear(e, edge));
 
       context.beginPath();
       context.moveTo(va.x, va.y);
@@ -104,7 +123,7 @@ class Board {
       context.stroke();
     });
 
-    virtualEdges.forEach(edge => {
+    this.virtualEdges.forEach(edge => {
       const { va, vb } = edge;
 
       context.beginPath();

@@ -27,32 +27,19 @@ touchEl.addEventListener("mouseup", () => {
 
 touchEl.addEventListener("touchstart", evt => {
   evt.preventDefault();
-  board.handleTouchStart(
-    Array.from(evt.changedTouches).map(touch => ({
-      x: touch.clientX,
-      y: touch.clientY,
-      id: touch.identifier
-    }))
-  );
+  board.handleMouseDown({ x: evt.touches[0].clientX, y: evt.touches[0].clientY });
 });
 
 touchEl.addEventListener("touchmove", evt => {
   evt.preventDefault();
-  board.handleTouchMove(
-    Array.from(evt.changedTouches).map(touch => ({
-      x: touch.clientX,
-      y: touch.clientY,
-      id: touch.identifier
-    }))
-  );
+  board.handleMouseMove({ x: evt.touches[0].clientX, y: evt.touches[0].clientY });
   canvas.render();
 });
 
 touchEl.addEventListener("touchend", evt => {
   evt.preventDefault();
-  board.handleTouchEnd(
-    Array.from(evt.changedTouches).map(touch => ({ id: touch.identifier }))
-  );
+  board.handleMouseUp();
+  canvas.render();
 });
 
 canvas.render();

@@ -13,8 +13,7 @@ class Board {
     this.width = width;
     this.height = height;
     this.voronoi = new Voronoi();
-    this.touchSelected = {};
-    this.mouseSelected = null;
+    this.selectedDot = null;
     this.matchedEdges = [];
     this.activeEdges = [];
     this.dots = this._generateRandomDots(NUM_DOTS);
@@ -47,13 +46,13 @@ class Board {
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
   };
 
-  _updateConstraints = () => {
+  _updateMatchedEdges = () => {
     this.matchedEdges = this.edges.filter(e =>
       this.virtualEdges.some(ve => linesAreCollinear(e, ve))
     );
   };
 
-  _updateCloseDots = () => {
+  _adjustAlmostMatchedDots = () => {
     this.dots.forEach(dot => {
       const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < 5);
 
@@ -64,7 +63,7 @@ class Board {
       } else {
         dot.matched = false;
       }
-    })
+    });
   };
 
   handleMouseDown = ({ x, y }) => {
@@ -77,23 +76,23 @@ class Board {
       return;
     }
 
-    this.mouseSelected = selected;
+    this.selectedDot = selected;
     this.activeEdges = this.matchedEdges.filter(
       edge => edge.lSite === selected || edge.rSite === selected
     );
   };
 
   handleMouseMove = ({ x, y }) => {
-    if (!this.mouseSelected) {
+    if (!this.selectedDot) {
       return;
     }
-    this.mouseSelected.x = x;
-    this.mouseSelected.y = y;
+    this.selectedDot.x = x;
+    this.selectedDot.y = y;
     this.activeEdges.forEach(edge => {
       const otherDot =
-        edge.lSite === this.mouseSelected ? edge.rSite : edge.lSite;
+        edge.lSite === this.selectedDot ? edge.rSite : edge.lSite;
       const mirror = getMirror({
-        point: { x: this.mouseSelected.x, y: this.mouseSelected.y },
+        point: { x: this.selectedDot.x, y: this.selectedDot.y },
         line: { va: edge.va, vb: edge.vb }
       });
       otherDot.x = mirror.x;
@@ -103,23 +102,27 @@ class Board {
   };
 
   handleMouseUp = () => {
-    this.mouseSelected = null;
-    this._updateCloseDots();
+    if (!this.selectedDot) {
+      return;
+    }
+
+    this.selectedDot = null;
+    this._adjustAlmostMatchedDots();
     this._updateEdges();
-    this._updateConstraints();
+    this._updateMatchedEdges();
   };
 
   render = context => {
     this.edges.forEach(edge => {
       const { va, vb } = edge;
 
-      const matches = this.virtualEdges.some(e => linesAreCollinear(e, edge));
+      const isMatched = this.virtualEdges.some(e => linesAreCollinear(e, edge));
 
       context.beginPath();
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
-      context.strokeStyle = matches ? "red" : "#000";
+      context.strokeStyle = isMatched ? "red" : "#000";
       context.stroke();
     });
 

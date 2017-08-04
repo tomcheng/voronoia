@@ -14,7 +14,7 @@ class Board {
     this.height = height;
     this.voronoi = new Voronoi();
     this.touchSelected = {};
-    this.mouseSelected = [];
+    this.mouseSelected = null;
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
   }
@@ -42,38 +42,20 @@ class Board {
       return;
     }
 
-    this.mouseSelected.push({
-      startX: selected.x,
-      startY: selected.y,
-      dot: selected
-    });
-
-    this.startX = x;
-    this.startY = y;
-    this.moved = false;
-    this.mouseDown = true;
+    this.mouseSelected = selected;
   };
 
   handleMouseMove = ({ x, y }) => {
-    if (!this.mouseSelected.length || !this.mouseDown) {
+    if (!this.mouseSelected) {
       return;
     }
 
-    if (distance({ x, y }, { x: this.startX, y: this.startY }) > THRESHOLD) {
-      this.moved = true;
-    }
-
-    this.mouseSelected.forEach(({ startX, startY, dot }) => {
-      dot.x = startX + x - this.startX;
-      dot.y = startY + y - this.startY;
-    });
+    this.mouseSelected.x = x;
+    this.mouseSelected.y = y;
   };
 
   handleMouseUp = () => {
-    this.mouseDown = false;
-    if (this.moved) {
-      this.mouseSelected = [];
-    }
+    this.mouseSelected = null;
   };
 
   handleTouchStart = touches => {

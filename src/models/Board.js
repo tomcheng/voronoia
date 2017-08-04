@@ -78,7 +78,9 @@ class Board {
 
     this.selectedDot = selected;
     this.activeEdges = this.matchedEdges.filter(
-      edge => edge.lSite === selected || edge.rSite === selected
+      e =>
+        (e.lSite === selected && !e.rSite.matched) ||
+        (e.rSite === selected && !e.lSite.matched)
     );
   };
 

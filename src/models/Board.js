@@ -6,7 +6,14 @@ import random from "lodash/random";
 import { linesAreCollinear } from "../utils/geometry";
 
 const SELECT_THRESHOLD = 20;
+const MATCH_THRESHOLD = 3;
+const FINE_TUNE_CONSTANT = 0.25;
 const NUM_DOTS = 10;
+const BACKGROUND_COLOR = "#d9ebd3";
+const MATCHED_EDGE_COLOR = "#04ac08";
+const UNMATCHED_EDGE_COLOR = "#000";
+const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.12)";
+
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
@@ -17,7 +24,7 @@ class Board {
     this.selectedDot = null;
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
-    this.background = new Rectangle({ x: 0, y: 0, width, height, fill: "#d9ebd3"});
+    this.background = new Rectangle({ x: 0, y: 0, width, height, fill: BACKGROUND_COLOR});
 
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
@@ -50,7 +57,7 @@ class Board {
 
   _adjustAlmostMatchedDots = () => {
     this.dots.forEach(dot => {
-      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < 3);
+      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < MATCH_THRESHOLD);
 
       if (matchedDot) {
         dot.x = matchedDot.x;
@@ -108,8 +115,8 @@ class Board {
       this.selectedDot.x = x;
       this.selectedDot.y = y;
     } else {
-      this.selectedDot.x = this.selectedStart.x + 0.25 * (x - this.mouseStart.x);
-      this.selectedDot.y = this.selectedStart.y + 0.25 * (y - this.mouseStart.y);
+      this.selectedDot.x = this.selectedStart.x + FINE_TUNE_CONSTANT * (x - this.mouseStart.x);
+      this.selectedDot.y = this.selectedStart.y + FINE_TUNE_CONSTANT * (y - this.mouseStart.y);
     }
 
     this._updateEdges();
@@ -135,7 +142,7 @@ class Board {
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
-      context.strokeStyle = "#bad6ad";
+      context.strokeStyle = VIRTUAL_EDGE_COLOR;
       context.stroke();
     });
 
@@ -148,7 +155,7 @@ class Board {
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
-      context.strokeStyle = isMatched ? "#04ac08" : "#000";
+      context.strokeStyle = isMatched ? MATCHED_EDGE_COLOR : UNMATCHED_EDGE_COLOR;
       context.stroke();
     });
 

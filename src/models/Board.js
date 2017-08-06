@@ -12,15 +12,16 @@ const TAP_DISTANCE_THRESHOLD = 3;
 const NUM_DOTS = 10;
 const BACKGROUND_COLOR = "rgba(4,172,8,0.1)";
 const MATCHED_COLOR = "rgba(4,172,8,1)";
-const UNMATCHED_COLOR = "rgba(4,172,8,0.4)";
+const UNMATCHED_COLOR = "rgba(4,172,8,0.5)";
 const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
-  constructor({ width, height }) {
+  constructor({ width, height, onWin }) {
     this.width = width;
     this.height = height;
+    this.onWin = onWin;
     this.voronoi = new Voronoi();
     this.selectedDot = null;
     this.dots = this._generateRandomDots(NUM_DOTS);
@@ -31,8 +32,9 @@ class Board {
     const diagram = this.voronoi.compute(this.dots, box);
     const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
 
-    this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
     this.virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
+    this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
+    this.matchedEdges = [];
     this.mouseDown = false;
     this.directMove = false;
   }
@@ -57,6 +59,10 @@ class Board {
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
   };
 
+  _updateMatchedEdges = () => {
+    this.matchedEdges = this.edges.filter(edge => this.virtualEdges.some(ve => linesAreCollinear(ve, edge)));
+  };
+
   _selectDot = dot => {
     if (this.selectedDot) {
       this.selectedDot.selected = false;
@@ -65,6 +71,8 @@ class Board {
     dot.selected = true;
     this.selectedDot = dot;
   };
+
+  _checkWin = () => this.edges.length === this.matchedEdges.length;
 
   handleMouseDown = ({ x, y }) => {
     this.mouseDown = true;
@@ -113,10 +121,14 @@ class Board {
     }
 
     this._updateEdges();
+    this._updateMatchedEdges();
   };
 
   handleMouseUp = () => {
     this.mouseDown = false;
+    if (this._checkWin()) {
+      this.onWin();
+    }
   };
 
   render = context => {
@@ -136,11 +148,12 @@ class Board {
     this.edges.forEach(edge => {
       const { va, vb } = edge;
 
-      const isMatched = this.virtualEdges.some(e => linesAreCollinear(e, edge));
+      const isMatched = this.matchedEdges.includes(edge);
 
       context.beginPath();
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
+      context.lineWidth = isMatched ? 1.5 : 1;
       context.strokeStyle = isMatched ? MATCHED_COLOR : UNMATCHED_COLOR;
       context.stroke();
     });

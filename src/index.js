@@ -3,11 +3,35 @@ import Board from "./models/Board";
 
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");
+const winEl = document.getElementById("win");
+const playAgainEl = document.getElementById("play-again");
+
+const handleWin = () => {
+  winEl.className = "";
+  winEl.style.display = "block";
+  requestAnimationFrame(() => {
+    winEl.className = "active";
+  });
+};
 
 const canvas = new Canvas(rootEl);
-const board = new Board({
+let board = new Board({
   width: window.innerWidth,
-  height: window.innerHeight
+  height: window.innerHeight,
+  onWin: handleWin
+});
+
+playAgainEl.addEventListener("click", () => {
+  winEl.style.display = "none";
+
+  canvas.remove(board);
+  board = new Board({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    onWin: handleWin
+  });
+  canvas.add(board);
+  canvas.render();
 });
 
 canvas.add(board);
@@ -27,12 +51,18 @@ touchEl.addEventListener("mouseup", () => {
 
 touchEl.addEventListener("touchstart", evt => {
   evt.preventDefault();
-  board.handleMouseDown({ x: evt.touches[0].clientX, y: evt.touches[0].clientY });
+  board.handleMouseDown({
+    x: evt.touches[0].clientX,
+    y: evt.touches[0].clientY
+  });
 });
 
 touchEl.addEventListener("touchmove", evt => {
   evt.preventDefault();
-  board.handleMouseMove({ x: evt.touches[0].clientX, y: evt.touches[0].clientY });
+  board.handleMouseMove({
+    x: evt.touches[0].clientX,
+    y: evt.touches[0].clientY
+  });
   canvas.render();
 });
 

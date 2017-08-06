@@ -1,14 +1,12 @@
 import { Circle } from "@thomascheng/canvas-utils";
 
-const DOT_COLOR = "rgba(4,172,8,1)";
-
 class Dot {
-  constructor({ x, y }) {
+  constructor({ x, y, color }) {
     this.x = x;
     this.y = y;
     this.selected = false;
     this.circle = new Circle({
-      x, y, radius: 2, fill: DOT_COLOR
+      x, y, radius: 1.5, fill: color
     });
     this.outerCircle = new Circle({
       x, y, radius: 15, fill: "rgba(0,0,0,0.05)"

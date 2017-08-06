@@ -43,7 +43,8 @@ class Board {
       dots.push(
         new Dot({
           x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
-          y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD)
+          y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
+          color: MATCHED_COLOR
         })
       );
     }

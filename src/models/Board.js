@@ -37,6 +37,7 @@ class Board {
     this.matchedEdges = [];
     this.mouseDown = false;
     this.directMove = false;
+    this.won = false;
   }
 
   _generateRandomDots = num => {
@@ -127,6 +128,9 @@ class Board {
   handleMouseUp = () => {
     this.mouseDown = false;
     if (this._checkWin()) {
+      this.selectedDot.selected = false;
+      this.selectedDot = null;
+      this.won = true;
       this.onWin();
     }
   };
@@ -134,16 +138,18 @@ class Board {
   render = context => {
     this.background.render(context);
 
-    this.virtualEdges.forEach(edge => {
-      const { va, vb } = edge;
+    if (!this.won) {
+      this.virtualEdges.forEach(edge => {
+        const { va, vb } = edge;
 
-      context.beginPath();
-      context.moveTo(va.x, va.y);
-      context.lineTo(vb.x, vb.y);
-      context.lineWidth = 1;
-      context.strokeStyle = VIRTUAL_EDGE_COLOR;
-      context.stroke();
-    });
+        context.beginPath();
+        context.moveTo(va.x, va.y);
+        context.lineTo(vb.x, vb.y);
+        context.lineWidth = 1;
+        context.strokeStyle = VIRTUAL_EDGE_COLOR;
+        context.stroke();
+      });
+    }
 
     this.edges.forEach(edge => {
       const { va, vb } = edge;
@@ -153,7 +159,7 @@ class Board {
       context.beginPath();
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
-      context.lineWidth = isMatched ? 1.5 : 1;
+      context.lineWidth = isMatched && !this.won ? 1.5 : 1;
       context.strokeStyle = isMatched ? MATCHED_COLOR : UNMATCHED_COLOR;
       context.stroke();
     });

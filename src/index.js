@@ -7,7 +7,9 @@ const winEl = document.getElementById("win");
 const playAgainEl = document.getElementById("play-again");
 
 const handleWin = () => {
+  canvas.render();
   winEl.className = "";
+  winEl.style.backgroundColor = "rgba(4,172,8,0.4)";
   winEl.style.display = "block";
   requestAnimationFrame(() => {
     winEl.className = "active";

@@ -1,17 +1,23 @@
 {
   "name": "voronoia",
   "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@thomascheng/canvas-utils": "0.0.11",
-    "lodash": "4.17.4",
-    "react-scripts": "1.0.10",
-    "voronoi": "gorhill/Javascript-Voronoi"
-  },
+  "description": "A game based on Voronoi diagrams",
+  "homepage": "http://voronoia.com",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "dependencies": {
+    "@thomascheng/canvas-utils": "0.0.11",
+    "lodash": "4.17.4",
+    "voronoi": "gorhill/Javascript-Voronoi"
+  },
+  "devDependencies": {
+    "gh-pages": "1.0.0",
+    "react-scripts": "1.0.10"
   }
 }

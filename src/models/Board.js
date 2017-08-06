@@ -1,11 +1,12 @@
 import Voronoi from "voronoi/rhill-voronoi-core";
 import find from "lodash/find";
+import { Rectangle } from "@thomascheng/canvas-utils";
 import Dot from "./Dot";
 import random from "lodash/random";
-import { linesAreCollinear, getMirror } from "../utils/geometry";
+import { linesAreCollinear } from "../utils/geometry";
 
 const THRESHOLD = 15;
-const NUM_DOTS = 20;
+const NUM_DOTS = 10;
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
@@ -14,10 +15,9 @@ class Board {
     this.height = height;
     this.voronoi = new Voronoi();
     this.selectedDot = null;
-    this.matchedEdges = [];
-    this.activeEdges = [];
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
+    this.background = new Rectangle({ x: 0, y: 0, width, height, fill: "#d9ebd3"});
 
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
@@ -25,6 +25,8 @@ class Board {
 
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
     this.virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
+    this.mouseDown = false;
+    this.directMove = false;
   }
 
   _generateRandomDots = num => {
@@ -46,15 +48,9 @@ class Board {
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
   };
 
-  _updateMatchedEdges = () => {
-    this.matchedEdges = this.edges.filter(e =>
-      this.virtualEdges.some(ve => linesAreCollinear(e, ve))
-    );
-  };
-
   _adjustAlmostMatchedDots = () => {
     this.dots.forEach(dot => {
-      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < 5);
+      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < 3);
 
       if (matchedDot) {
         dot.x = matchedDot.x;
@@ -67,54 +63,68 @@ class Board {
   };
 
   handleMouseDown = ({ x, y }) => {
+    this.mouseDown = true;
     const selected = find(
       this.dots,
       dot => distance(dot, { x, y }) < THRESHOLD
     );
 
-    if (!selected) {
+    console.log(selected);
+
+    if (!selected && !this.selectedDot) {
       return;
     }
 
-    this.selectedDot = selected;
-    this.activeEdges = this.matchedEdges.filter(
-      e =>
-        (e.lSite === selected && !e.rSite.matched) ||
-        (e.rSite === selected && !e.lSite.matched)
-    );
+    if (selected) {
+      this.selectedDot = selected;
+      this.directMove = true;
+    } else {
+      this.mouseStart = { x, y };
+      this.selectedStart = { x: this.selectedDot.x, y: this.selectedDot.y };
+      this.directMove = false;
+    }
   };
 
   handleMouseMove = ({ x, y }) => {
-    if (!this.selectedDot) {
+    if (!this.selectedDot || !this.mouseDown) {
       return;
     }
-    this.selectedDot.x = x;
-    this.selectedDot.y = y;
-    this.activeEdges.forEach(edge => {
-      const otherDot =
-        edge.lSite === this.selectedDot ? edge.rSite : edge.lSite;
-      const mirror = getMirror({
-        point: { x: this.selectedDot.x, y: this.selectedDot.y },
-        line: { va: edge.va, vb: edge.vb }
-      });
-      otherDot.x = mirror.x;
-      otherDot.y = mirror.y;
-    });
+
+    if (this.directMove) {
+      this.selectedDot.x = x;
+      this.selectedDot.y = y;
+    } else {
+      this.selectedDot.x = this.selectedStart.x + 0.25 * (x - this.mouseStart.x);
+      this.selectedDot.y = this.selectedStart.y + 0.25 * (y - this.mouseStart.y);
+    }
+
     this._updateEdges();
   };
 
   handleMouseUp = () => {
+    this.mouseDown = false;
     if (!this.selectedDot) {
       return;
     }
 
-    this.selectedDot = null;
     this._adjustAlmostMatchedDots();
     this._updateEdges();
-    this._updateMatchedEdges();
   };
 
   render = context => {
+    this.background.render(context);
+
+    this.virtualEdges.forEach(edge => {
+      const { va, vb } = edge;
+
+      context.beginPath();
+      context.moveTo(va.x, va.y);
+      context.lineTo(vb.x, vb.y);
+      context.lineWidth = 1;
+      context.strokeStyle = "#bad6ad";
+      context.stroke();
+    });
+
     this.edges.forEach(edge => {
       const { va, vb } = edge;
 
@@ -124,18 +134,7 @@ class Board {
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = 1;
-      context.strokeStyle = isMatched ? "red" : "#000";
-      context.stroke();
-    });
-
-    this.virtualEdges.forEach(edge => {
-      const { va, vb } = edge;
-
-      context.beginPath();
-      context.moveTo(va.x, va.y);
-      context.lineTo(vb.x, vb.y);
-      context.lineWidth = 1;
-      context.strokeStyle = "#aaa";
+      context.strokeStyle = isMatched ? "#04ac08" : "#000";
       context.stroke();
     });
 

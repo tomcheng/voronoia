@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@thomascheng/canvas-utils": "0.0.9",
+    "@thomascheng/canvas-utils": "0.0.11",
     "lodash": "4.17.4",
     "react-scripts": "1.0.10",
     "voronoi": "gorhill/Javascript-Voronoi"

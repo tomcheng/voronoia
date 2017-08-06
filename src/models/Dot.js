@@ -7,13 +7,21 @@ class Dot {
     this.matched = false;
     this.circle = new Circle({
       x, y, radius: 2, fill: "#000"
-    })
+    });
+    this.outerCircle = new Circle({
+      x, y, radius: 15, fill: "rgba(0,0,0,0.05)"
+    });
   }
 
   render = context => {
     this.circle.x = this.x;
     this.circle.y = this.y;
-    this.circle.fill = this.matched ? "red" : "#000";
+    this.circle.fill = this.matched ? "#04ac08" : "#000";
+    this.outerCircle.x = this.x;
+    this.outerCircle.y = this.y;
+    if (!this.matched) {
+      this.outerCircle.render(context);
+    }
     this.circle.render(context);
   };
 }

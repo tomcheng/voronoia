@@ -56,6 +56,10 @@ class Board {
         dot.x = matchedDot.x;
         dot.y = matchedDot.y;
         dot.matched = true;
+        if (dot === this.selectedDot) {
+          dot.selected = false;
+          this.selectedDot = null;
+        }
       } else {
         dot.matched = false;
       }

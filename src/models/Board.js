@@ -62,6 +62,15 @@ class Board {
     });
   };
 
+  _selectDot = dot => {
+    if (this.selectedDot) {
+      this.selectedDot.selected = false;
+    }
+
+    dot.selected = true;
+    this.selectedDot = dot;
+  };
+
   handleMouseDown = ({ x, y }) => {
     this.mouseDown = true;
     const selected = find(
@@ -69,14 +78,15 @@ class Board {
       dot => distance(dot, { x, y }) < THRESHOLD
     );
 
-    console.log(selected);
+    if (selected) {
+      this._selectDot(selected);
+    }
 
-    if (!selected && !this.selectedDot) {
+    if (!this.selectedDot) {
       return;
     }
 
     if (selected) {
-      this.selectedDot = selected;
       this.directMove = true;
     } else {
       this.mouseStart = { x, y };

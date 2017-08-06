@@ -5,6 +5,7 @@ class Dot {
     this.x = x;
     this.y = y;
     this.matched = false;
+    this.selected = false;
     this.circle = new Circle({
       x, y, radius: 2, fill: "#000"
     });
@@ -17,9 +18,10 @@ class Dot {
     this.circle.x = this.x;
     this.circle.y = this.y;
     this.circle.fill = this.matched ? "#04ac08" : "#000";
-    this.outerCircle.x = this.x;
-    this.outerCircle.y = this.y;
-    if (!this.matched) {
+
+    if (this.selected) {
+      this.outerCircle.x = this.x;
+      this.outerCircle.y = this.y;
       this.outerCircle.render(context);
     }
     this.circle.render(context);

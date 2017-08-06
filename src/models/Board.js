@@ -6,13 +6,14 @@ import random from "lodash/random";
 import { linesAreCollinear } from "../utils/geometry";
 
 const SELECT_THRESHOLD = 20;
-const MATCH_THRESHOLD = 3;
 const FINE_TUNE_CONSTANT = 0.25;
+const TAP_TIME_THRESHOLD = 300;
+const TAP_DISTANCE_THRESHOLD = 3;
 const NUM_DOTS = 10;
-const BACKGROUND_COLOR = "#d9ebd3";
-const MATCHED_EDGE_COLOR = "#04ac08";
-const UNMATCHED_EDGE_COLOR = "#000";
-const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.12)";
+const BACKGROUND_COLOR = "rgba(4,172,8,0.1)";
+const MATCHED_COLOR = "rgba(4,172,8,1)";
+const UNMATCHED_COLOR = "rgba(4,172,8,0.4)";
+const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
@@ -55,24 +56,6 @@ class Board {
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
   };
 
-  _adjustAlmostMatchedDots = () => {
-    this.dots.forEach(dot => {
-      const matchedDot = find(this.virtualDots, vd => distance(dot, vd) < MATCH_THRESHOLD);
-
-      if (matchedDot) {
-        dot.x = matchedDot.x;
-        dot.y = matchedDot.y;
-        dot.matched = true;
-        if (dot === this.selectedDot) {
-          dot.selected = false;
-          this.selectedDot = null;
-        }
-      } else {
-        dot.matched = false;
-      }
-    });
-  };
-
   _selectDot = dot => {
     if (this.selectedDot) {
       this.selectedDot.selected = false;
@@ -84,6 +67,7 @@ class Board {
 
   handleMouseDown = ({ x, y }) => {
     this.mouseDown = true;
+    this.mouseDownTime = new Date().getTime();
     const selected = find(
       this.dots,
       dot => distance(dot, { x, y }) < SELECT_THRESHOLD
@@ -97,10 +81,11 @@ class Board {
       return;
     }
 
+    this.mouseStart = { x, y };
+
     if (selected) {
       this.directMove = true;
     } else {
-      this.mouseStart = { x, y };
       this.selectedStart = { x: this.selectedDot.x, y: this.selectedDot.y };
       this.directMove = false;
     }
@@ -108,6 +93,13 @@ class Board {
 
   handleMouseMove = ({ x, y }) => {
     if (!this.selectedDot || !this.mouseDown) {
+      return;
+    }
+
+    const tapThresholdMet = new Date().getTime() - this.mouseDownTime > TAP_TIME_THRESHOLD;
+    const tapDistanceThresholdMet = distance(this.mouseStart, {x, y}) > TAP_DISTANCE_THRESHOLD;
+
+    if (this.directMove && !tapThresholdMet && !tapDistanceThresholdMet) {
       return;
     }
 
@@ -124,12 +116,6 @@ class Board {
 
   handleMouseUp = () => {
     this.mouseDown = false;
-    if (!this.selectedDot) {
-      return;
-    }
-
-    this._adjustAlmostMatchedDots();
-    this._updateEdges();
   };
 
   render = context => {
@@ -154,8 +140,7 @@ class Board {
       context.beginPath();
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
-      context.lineWidth = 1;
-      context.strokeStyle = isMatched ? MATCHED_EDGE_COLOR : UNMATCHED_EDGE_COLOR;
+      context.strokeStyle = isMatched ? MATCHED_COLOR : UNMATCHED_COLOR;
       context.stroke();
     });
 

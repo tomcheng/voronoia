@@ -5,7 +5,7 @@ import Dot from "./Dot";
 import random from "lodash/random";
 import { linesAreCollinear } from "../utils/geometry";
 
-const THRESHOLD = 15;
+const SELECT_THRESHOLD = 20;
 const NUM_DOTS = 10;
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
@@ -34,8 +34,8 @@ class Board {
     for (let i = 0; i < num; i++) {
       dots.push(
         new Dot({
-          x: random(THRESHOLD, this.width - THRESHOLD),
-          y: random(THRESHOLD, this.height - THRESHOLD)
+          x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
+          y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD)
         })
       );
     }
@@ -79,7 +79,7 @@ class Board {
     this.mouseDown = true;
     const selected = find(
       this.dots,
-      dot => distance(dot, { x, y }) < THRESHOLD
+      dot => distance(dot, { x, y }) < SELECT_THRESHOLD
     );
 
     if (selected) {

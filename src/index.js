@@ -5,6 +5,7 @@ import { getRandomColor, toRGBA } from "./utils/colors";
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");
 const winEl = document.getElementById("win");
+const scoreEl = document.getElementById("score");
 const playAgainEl = document.getElementById("play-again");
 let primaryColor = getRandomColor();
 
@@ -18,12 +19,20 @@ const handleWin = () => {
   });
 };
 
+const handleUpdateScore = newScore => {
+  scoreEl.innerHTML = newScore;
+};
+
 const canvas = new Canvas(rootEl);
+
+scoreEl.style.color = toRGBA(primaryColor, 1);
+
 let board = new Board({
   width: window.innerWidth,
   height: window.innerHeight,
   color: primaryColor,
-  onWin: handleWin
+  onWin: handleWin,
+  onUpdateScore: handleUpdateScore
 });
 
 playAgainEl.addEventListener("click", () => {
@@ -31,6 +40,7 @@ playAgainEl.addEventListener("click", () => {
 
   canvas.remove(board);
   primaryColor = getRandomColor();
+  scoreEl.style.color = toRGBA(primaryColor, 1);
   board = new Board({
     width: window.innerWidth,
     height: window.innerHeight,

@@ -16,11 +16,12 @@ const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
-  constructor({ width, height, color, onWin }) {
+  constructor({ width, height, color, onWin, onUpdateScore }) {
     this.width = width;
     this.height = height;
     this.color = color;
     this.onWin = onWin;
+    this.onUpdateScore = onUpdateScore;
     this.voronoi = new Voronoi();
     this.selectedDot = null;
     this.dots = this._generateRandomDots(NUM_DOTS);
@@ -43,6 +44,8 @@ class Board {
     this.mouseDown = false;
     this.directMove = false;
     this.won = false;
+
+    this._updateScore();
   }
 
   _generateRandomDots = num => {
@@ -69,6 +72,10 @@ class Board {
     this.matchedEdges = this.edges.filter(edge =>
       this.virtualEdges.some(ve => linesAreCollinear(ve, edge))
     );
+  };
+
+  _updateScore = () => {
+    this.onUpdateScore(`${this.matchedEdges.length}/${this.virtualEdges.length}`);
   };
 
   _selectDot = dot => {
@@ -134,6 +141,7 @@ class Board {
 
     this._updateEdges();
     this._updateMatchedEdges();
+    this._updateScore();
   };
 
   handleMouseUp = () => {

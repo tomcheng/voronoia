@@ -3,7 +3,7 @@
   "name": "Voronoia",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "voronoia-icon_192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     }

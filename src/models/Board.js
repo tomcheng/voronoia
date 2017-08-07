@@ -3,6 +3,7 @@ import find from "lodash/find";
 import { Rectangle } from "@thomascheng/canvas-utils";
 import Dot from "./Dot";
 import random from "lodash/random";
+import clamp from "lodash/clamp";
 import { linesAreCollinear } from "../utils/geometry";
 import { toRGBA } from "../utils/colors";
 
@@ -77,7 +78,9 @@ class Board {
   };
 
   _updateScore = () => {
-    this.onUpdateScore(`${this.matchedEdges.length}/${this.virtualEdges.length}`);
+    this.onUpdateScore(
+      `${this.matchedEdges.length}/${this.virtualEdges.length}`
+    );
   };
 
   _selectDot = dot => {
@@ -135,10 +138,16 @@ class Board {
       this.selectedDot.x = x;
       this.selectedDot.y = y;
     } else {
-      this.selectedDot.x =
-        this.selectedStart.x + FINE_TUNE_CONSTANT * (x - this.mouseStart.x);
-      this.selectedDot.y =
-        this.selectedStart.y + FINE_TUNE_CONSTANT * (y - this.mouseStart.y);
+      this.selectedDot.x = clamp(
+        this.selectedStart.x + FINE_TUNE_CONSTANT * (x - this.mouseStart.x),
+        0,
+        this.width
+      );
+      this.selectedDot.y = clamp(
+        this.selectedStart.y + FINE_TUNE_CONSTANT * (y - this.mouseStart.y),
+        0,
+        this.height
+      );
     }
 
     this._updateEdges();
@@ -183,7 +192,9 @@ class Board {
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = isMatched && !this.won ? 1.5 : 1;
-      context.strokeStyle = isMatched ? toRGBA(this.color, 1) : toRGBA(this.color, 0.5);
+      context.strokeStyle = isMatched
+        ? toRGBA(this.color, 1)
+        : toRGBA(this.color, 0.5);
       context.stroke();
     });
 

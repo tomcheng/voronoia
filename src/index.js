@@ -1,4 +1,5 @@
 import { Canvas } from "@thomascheng/canvas-utils";
+import debounce from "lodash/debounce";
 import Board from "./models/Board";
 import { getRandomColor, toRGBA } from "./utils/colors";
 
@@ -7,25 +8,9 @@ const touchEl = document.getElementById("touch");
 const winEl = document.getElementById("win");
 const scoreEl = document.getElementById("score");
 const playAgainEl = document.getElementById("play-again");
-let primaryColor = getRandomColor();
-
-const handleWin = () => {
-  canvas.render();
-  winEl.className = "";
-  winEl.style.backgroundColor = toRGBA(primaryColor, 0.4);
-  winEl.style.display = "block";
-  scoreEl.style.display = "none";
-  setTimeout(() => {
-    winEl.className = "active";
-  }, 1);
-};
-
-const handleUpdateScore = newScore => {
-  scoreEl.innerHTML = newScore;
-};
-
 const canvas = new Canvas(rootEl);
 
+let primaryColor = getRandomColor();
 scoreEl.style.color = toRGBA(primaryColor, 1);
 
 let board = new Board({
@@ -36,25 +21,21 @@ let board = new Board({
   onUpdateScore: handleUpdateScore
 });
 
+canvas.add(board);
+canvas.render();
+
 playAgainEl.addEventListener("click", () => {
   winEl.style.display = "none";
 
-  canvas.remove(board);
-  primaryColor = getRandomColor();
-  scoreEl.style.color = toRGBA(primaryColor, 1);
-  scoreEl.style.display = "block";
-  board = new Board({
-    width: window.innerWidth,
-    height: window.innerHeight,
-    color: primaryColor,
-    onWin: handleWin,
-    onUpdateScore: handleUpdateScore
-  });
-  canvas.add(board);
+  resetBoard();
   canvas.render();
 });
 
-canvas.add(board);
+window.addEventListener("resize", debounce(() => {
+  canvas.resize();
+  resetBoard();
+  canvas.render();
+}, 300));
 
 touchEl.addEventListener("mousedown", evt => {
   board.handleMouseDown({ x: evt.clientX, y: evt.clientY });
@@ -92,4 +73,32 @@ touchEl.addEventListener("touchend", evt => {
   canvas.render();
 });
 
-canvas.render();
+function handleWin() {
+  canvas.render();
+  winEl.className = "";
+  winEl.style.backgroundColor = toRGBA(primaryColor, 0.4);
+  winEl.style.display = "block";
+  scoreEl.style.display = "none";
+  setTimeout(() => {
+    winEl.className = "active";
+  }, 1);
+}
+
+function handleUpdateScore(newScore) {
+  scoreEl.innerHTML = newScore;
+}
+
+function resetBoard() {
+  canvas.remove(board);
+  primaryColor = getRandomColor();
+  scoreEl.style.color = toRGBA(primaryColor, 1);
+  scoreEl.style.display = "block";
+  board = new Board({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    color: primaryColor,
+    onWin: handleWin,
+    onUpdateScore: handleUpdateScore
+  });
+  canvas.add(board);
+}

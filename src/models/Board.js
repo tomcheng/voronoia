@@ -10,7 +10,6 @@ const SELECT_THRESHOLD = 20;
 const FINE_TUNE_CONSTANT = 0.25;
 const TAP_TIME_THRESHOLD = 300;
 const TAP_DISTANCE_THRESHOLD = 3;
-const NUM_DOTS = 10;
 const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -24,8 +23,6 @@ class Board {
     this.onUpdateScore = onUpdateScore;
     this.voronoi = new Voronoi();
     this.selectedDot = null;
-    this.dots = this._generateRandomDots(NUM_DOTS);
-    this.virtualDots = this._generateRandomDots(NUM_DOTS);
     this.background = new Rectangle({
       x: 0,
       y: 0,
@@ -33,6 +30,11 @@ class Board {
       height,
       fill: toRGBA(this.color, 0.1)
     });
+
+    const numDots = random(5, 10);
+
+    this.dots = this._generateRandomDots(numDots);
+    this.virtualDots = this._generateRandomDots(numDots);
 
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
@@ -147,8 +149,10 @@ class Board {
   handleMouseUp = () => {
     this.mouseDown = false;
     if (this._checkWin()) {
-      this.selectedDot.selected = false;
-      this.selectedDot = null;
+      if (this.selectedDot) {
+        this.selectedDot.selected = false;
+        this.selectedDot = null;
+      }
       this.won = true;
       this.onWin();
     }

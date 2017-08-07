@@ -14,9 +14,10 @@ const handleWin = () => {
   winEl.className = "";
   winEl.style.backgroundColor = toRGBA(primaryColor, 0.4);
   winEl.style.display = "block";
-  requestAnimationFrame(() => {
+  scoreEl.style.display = "none";
+  setTimeout(() => {
     winEl.className = "active";
-  });
+  }, 1);
 };
 
 const handleUpdateScore = newScore => {
@@ -41,11 +42,13 @@ playAgainEl.addEventListener("click", () => {
   canvas.remove(board);
   primaryColor = getRandomColor();
   scoreEl.style.color = toRGBA(primaryColor, 1);
+  scoreEl.style.display = "block";
   board = new Board({
     width: window.innerWidth,
     height: window.innerHeight,
     color: primaryColor,
-    onWin: handleWin
+    onWin: handleWin,
+    onUpdateScore: handleUpdateScore
   });
   canvas.add(board);
   canvas.render();

@@ -1,15 +1,17 @@
 import { Canvas } from "@thomascheng/canvas-utils";
 import Board from "./models/Board";
+import { getRandomColor, toRGBA } from "./utils/colors";
 
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");
 const winEl = document.getElementById("win");
 const playAgainEl = document.getElementById("play-again");
+let primaryColor = getRandomColor();
 
 const handleWin = () => {
   canvas.render();
   winEl.className = "";
-  winEl.style.backgroundColor = "rgba(4,172,8,0.4)";
+  winEl.style.backgroundColor = toRGBA(primaryColor, 0.4);
   winEl.style.display = "block";
   requestAnimationFrame(() => {
     winEl.className = "active";
@@ -20,6 +22,7 @@ const canvas = new Canvas(rootEl);
 let board = new Board({
   width: window.innerWidth,
   height: window.innerHeight,
+  color: primaryColor,
   onWin: handleWin
 });
 
@@ -27,9 +30,11 @@ playAgainEl.addEventListener("click", () => {
   winEl.style.display = "none";
 
   canvas.remove(board);
+  primaryColor = getRandomColor();
   board = new Board({
     width: window.innerWidth,
     height: window.innerHeight,
+    color: primaryColor,
     onWin: handleWin
   });
   canvas.add(board);

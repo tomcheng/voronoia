@@ -4,29 +4,34 @@ import { Rectangle } from "@thomascheng/canvas-utils";
 import Dot from "./Dot";
 import random from "lodash/random";
 import { linesAreCollinear } from "../utils/geometry";
+import { toRGBA } from "../utils/colors";
 
 const SELECT_THRESHOLD = 20;
 const FINE_TUNE_CONSTANT = 0.25;
 const TAP_TIME_THRESHOLD = 300;
 const TAP_DISTANCE_THRESHOLD = 3;
 const NUM_DOTS = 10;
-const BACKGROUND_COLOR = "rgba(4,172,8,0.1)";
-const MATCHED_COLOR = "rgba(4,172,8,1)";
-const UNMATCHED_COLOR = "rgba(4,172,8,0.5)";
 const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
 class Board {
-  constructor({ width, height, onWin }) {
+  constructor({ width, height, color, onWin }) {
     this.width = width;
     this.height = height;
+    this.color = color;
     this.onWin = onWin;
     this.voronoi = new Voronoi();
     this.selectedDot = null;
     this.dots = this._generateRandomDots(NUM_DOTS);
     this.virtualDots = this._generateRandomDots(NUM_DOTS);
-    this.background = new Rectangle({ x: 0, y: 0, width, height, fill: BACKGROUND_COLOR});
+    this.background = new Rectangle({
+      x: 0,
+      y: 0,
+      width,
+      height,
+      fill: toRGBA(this.color, 0.1)
+    });
 
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
@@ -47,7 +52,7 @@ class Board {
         new Dot({
           x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
           y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
-          color: MATCHED_COLOR
+          color: toRGBA(this.color, 1)
         })
       );
     }
@@ -61,7 +66,9 @@ class Board {
   };
 
   _updateMatchedEdges = () => {
-    this.matchedEdges = this.edges.filter(edge => this.virtualEdges.some(ve => linesAreCollinear(ve, edge)));
+    this.matchedEdges = this.edges.filter(edge =>
+      this.virtualEdges.some(ve => linesAreCollinear(ve, edge))
+    );
   };
 
   _selectDot = dot => {
@@ -106,8 +113,10 @@ class Board {
       return;
     }
 
-    const tapThresholdMet = new Date().getTime() - this.mouseDownTime > TAP_TIME_THRESHOLD;
-    const tapDistanceThresholdMet = distance(this.mouseStart, {x, y}) > TAP_DISTANCE_THRESHOLD;
+    const tapThresholdMet =
+      new Date().getTime() - this.mouseDownTime > TAP_TIME_THRESHOLD;
+    const tapDistanceThresholdMet =
+      distance(this.mouseStart, { x, y }) > TAP_DISTANCE_THRESHOLD;
 
     if (this.directMove && !tapThresholdMet && !tapDistanceThresholdMet) {
       return;
@@ -117,8 +126,10 @@ class Board {
       this.selectedDot.x = x;
       this.selectedDot.y = y;
     } else {
-      this.selectedDot.x = this.selectedStart.x + FINE_TUNE_CONSTANT * (x - this.mouseStart.x);
-      this.selectedDot.y = this.selectedStart.y + FINE_TUNE_CONSTANT * (y - this.mouseStart.y);
+      this.selectedDot.x =
+        this.selectedStart.x + FINE_TUNE_CONSTANT * (x - this.mouseStart.x);
+      this.selectedDot.y =
+        this.selectedStart.y + FINE_TUNE_CONSTANT * (y - this.mouseStart.y);
     }
 
     this._updateEdges();
@@ -160,7 +171,7 @@ class Board {
       context.moveTo(va.x, va.y);
       context.lineTo(vb.x, vb.y);
       context.lineWidth = isMatched && !this.won ? 1.5 : 1;
-      context.strokeStyle = isMatched ? MATCHED_COLOR : UNMATCHED_COLOR;
+      context.strokeStyle = isMatched ? toRGBA(this.color, 1) : toRGBA(this.color, 0.5);
       context.stroke();
     });
 

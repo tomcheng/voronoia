@@ -2,6 +2,7 @@ import { Canvas } from "@thomascheng/canvas-utils";
 import debounce from "lodash/debounce";
 import Board from "./models/Board";
 import { getRandomColor, toRGBA } from "./utils/colors";
+import registerServiceWorker from "./registerServiceWorker";
 
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");
@@ -102,3 +103,5 @@ function resetBoard() {
   });
   canvas.add(board);
 }
+
+registerServiceWorker();

@@ -70,7 +70,7 @@ class Board {
 
   _filterOutOfScreenVertices = vertices =>
     vertices.filter(
-      v => v.x >= 0 && v.x <= this.width && v.y >= 0 && v.y <= this.height
+      v => v.x >= -1 && v.x <= this.width + 1 && v.y >= -1 && v.y <= this.height + 1
     );
 
   _generateRandomDots = num => {

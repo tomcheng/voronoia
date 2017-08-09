@@ -5,6 +5,7 @@ import Dot from "./Dot";
 import random from "lodash/random";
 import clamp from "lodash/clamp";
 import min from "lodash/min";
+import uniqWith from "lodash/uniqWith";
 import { toRGBA } from "../utils/colors";
 
 const SELECT_THRESHOLD = 20;
@@ -43,9 +44,11 @@ class Board {
     const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
 
     this.virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
-    this.virtualVertices = virtualDiagram.vertices;
+    this.virtualVertices = this._filterOutOfScreenVertices(
+      this._filterDuplicates(this._filterCorners(virtualDiagram.vertices))
+    );
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
-    this.vertices = diagram.vertices;
+    this.vertices = this._filterCorners(diagram.vertices);
     this.matchedVertices = [];
     this.matchedEdges = [];
     this.directMove = false;
@@ -53,6 +56,22 @@ class Board {
 
     this._updateScore();
   }
+
+  _filterCorners = vertices =>
+    vertices.filter(
+      v => ![0, this.width].includes(v.x) || ![0, v.height].includes(v.y)
+    );
+
+  _filterDuplicates = vertices =>
+    uniqWith(
+      vertices,
+      (v1, v2) => Math.abs(v1.x - v2.x) < 0.001 && Math.abs(v1.y - v2.y) < 0.001
+    );
+
+  _filterOutOfScreenVertices = vertices =>
+    vertices.filter(
+      v => v.x >= 0 && v.x <= this.width && v.y >= 0 && v.y <= this.height
+    );
 
   _generateRandomDots = num => {
     const dots = [];
@@ -72,19 +91,25 @@ class Board {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
-    this.vertices = diagram.vertices;
+    this.vertices = this._filterCorners(diagram.vertices);
     this.matchedVertices = diagram.vertices.filter(vertex =>
       this.virtualVertices.some(v => distance(v, vertex) < VERTEX_THRESHOLD)
     );
-    this.matchedEdges = this.edges.filter(({ va, vb }) =>
-      this.matchedVertices.includes(va) && this.matchedVertices.includes(vb)
+    this.matchedEdges = this.edges.filter(
+      ({ va, vb }) =>
+        this.matchedVertices.includes(va) && this.matchedVertices.includes(vb)
     );
   };
 
   _updateScore = () => {
-    this.onUpdateScore(
-      `${this.matchedEdges.length}/${this.virtualEdges.length}`
-    );
+    const totalDistance = this._filterOutOfScreenVertices(
+      this._filterDuplicates(this.vertices)
+    ).reduce((sum, vertex) => {
+      const distances = this.virtualVertices.map(v => distance(v, vertex));
+      return sum + Math.max(min(distances) - VERTEX_THRESHOLD, 0);
+    }, 0);
+
+    this.onUpdateScore(Math.ceil(totalDistance));
   };
 
   _selectDot = dot => {

@@ -34,7 +34,7 @@ class Board {
       fill: toRGBA(this.color, 0.1)
     });
 
-    const numDots = random(6, 10);
+    const numDots = random(7, 12);
 
     this.dots = this._generateRandomDots(numDots);
     this.virtualDots = this._generateRandomDots(numDots);
@@ -48,7 +48,9 @@ class Board {
       this._filterDuplicates(this._filterCorners(virtualDiagram.vertices))
     );
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
-    this.vertices = this._filterCorners(diagram.vertices);
+    this.vertices = this._filterOutOfScreenVertices(
+      this._filterCorners(diagram.vertices)
+    );
     this.matchedVertices = [];
     this.matchedEdges = [];
     this.directMove = false;
@@ -59,7 +61,7 @@ class Board {
 
   _filterCorners = vertices =>
     vertices.filter(
-      v => ![0, this.width].includes(v.x) || ![0, v.height].includes(v.y)
+      v => ![0, this.width].includes(v.x) || ![0, this.height].includes(v.y)
     );
 
   _filterDuplicates = vertices =>
@@ -70,7 +72,11 @@ class Board {
 
   _filterOutOfScreenVertices = vertices =>
     vertices.filter(
-      v => v.x >= -1 && v.x <= this.width + 1 && v.y >= -1 && v.y <= this.height + 1
+      v =>
+        v.x >= -1 &&
+        v.x <= this.width + 1 &&
+        v.y >= -1 &&
+        v.y <= this.height + 1
     );
 
   _generateRandomDots = num => {
@@ -91,7 +97,9 @@ class Board {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
-    this.vertices = this._filterCorners(diagram.vertices);
+    this.vertices = this._filterOutOfScreenVertices(
+      this._filterCorners(diagram.vertices)
+    );
     this.matchedVertices = diagram.vertices.filter(vertex =>
       this.virtualVertices.some(v => distance(v, vertex) < VERTEX_THRESHOLD)
     );
@@ -102,8 +110,8 @@ class Board {
   };
 
   _updateScore = () => {
-    const totalDistance = this._filterOutOfScreenVertices(
-      this._filterDuplicates(this.vertices)
+    const totalDistance = this._filterDuplicates(
+      this.vertices
     ).reduce((sum, vertex) => {
       const distances = this.virtualVertices.map(v => distance(v, vertex));
       return sum + Math.max(Math.ceil(min(distances)) - VERTEX_THRESHOLD, 0);
@@ -208,9 +216,7 @@ class Board {
         context.stroke();
       });
 
-      this._filterOutOfScreenVertices(
-        this._filterDuplicates(this._filterCorners(this.vertices))
-      ).forEach(vertex => {
+      this._filterDuplicates(this.vertices).forEach(vertex => {
         const distances = this.virtualVertices.map(v => distance(v, vertex));
         const minDistance = min(distances);
 

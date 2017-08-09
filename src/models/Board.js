@@ -106,10 +106,10 @@ class Board {
       this._filterDuplicates(this.vertices)
     ).reduce((sum, vertex) => {
       const distances = this.virtualVertices.map(v => distance(v, vertex));
-      return sum + Math.max(min(distances) - VERTEX_THRESHOLD, 0);
+      return sum + Math.max(Math.ceil(min(distances)) - VERTEX_THRESHOLD, 0);
     }, 0);
 
-    this.onUpdateScore(Math.ceil(totalDistance));
+    this.onUpdateScore(totalDistance);
   };
 
   _selectDot = dot => {
@@ -208,7 +208,9 @@ class Board {
         context.stroke();
       });
 
-      this.vertices.forEach(vertex => {
+      this._filterOutOfScreenVertices(
+        this._filterDuplicates(this._filterCorners(this.vertices))
+      ).forEach(vertex => {
         const distances = this.virtualVertices.map(v => distance(v, vertex));
         const minDistance = min(distances);
 

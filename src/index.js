@@ -12,6 +12,7 @@ const playAgainEl = document.getElementById("play-again");
 const canvas = new Canvas(rootEl);
 
 let primaryColor = getRandomColor();
+let mouseDown = false;
 scoreEl.style.color = toRGBA(primaryColor, 1);
 
 let board = new Board({
@@ -39,15 +40,19 @@ window.addEventListener("resize", debounce(() => {
 }, 300));
 
 touchEl.addEventListener("mousedown", evt => {
+  mouseDown = true;
   board.handleMouseDown({ x: evt.clientX, y: evt.clientY });
 });
 
 touchEl.addEventListener("mousemove", evt => {
-  board.handleMouseMove({ x: evt.clientX, y: evt.clientY });
-  canvas.render();
+  if (mouseDown) {
+    board.handleMouseMove({ x: evt.clientX, y: evt.clientY });
+    canvas.render();
+  }
 });
 
 touchEl.addEventListener("mouseup", () => {
+  mouseDown = false;
   board.handleMouseUp();
 });
 

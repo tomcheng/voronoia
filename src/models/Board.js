@@ -9,6 +9,7 @@ import uniqWith from "lodash/uniqWith";
 import { toRGBA } from "../utils/colors";
 
 const SELECT_THRESHOLD = 20;
+const MINIMUM_DOT_DISTANCE = 50;
 const FINE_TUNE_CONSTANT = 0.25;
 const TAP_TIME_THRESHOLD = 300;
 const TAP_DISTANCE_THRESHOLD = 3;
@@ -59,6 +60,24 @@ class Board {
     this._updateScore();
   }
 
+  _generateRandomDots = num => {
+    const dots = [];
+
+    while (dots.length < num) {
+      const potentialDot = new Dot({
+        x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
+        y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
+        color: toRGBA(this.color, 1)
+      });
+
+      if (dots.every(dot => distance(dot, potentialDot) > MINIMUM_DOT_DISTANCE)) {
+        dots.push(potentialDot);
+      }
+    }
+
+    return dots;
+  };
+
   _filterCorners = vertices =>
     vertices.filter(
       v => ![0, this.width].includes(v.x) || ![0, this.height].includes(v.y)
@@ -78,20 +97,6 @@ class Board {
         v.y >= -1 &&
         v.y <= this.height + 1
     );
-
-  _generateRandomDots = num => {
-    const dots = [];
-    for (let i = 0; i < num; i++) {
-      dots.push(
-        new Dot({
-          x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
-          y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
-          color: toRGBA(this.color, 1)
-        })
-      );
-    }
-    return dots;
-  };
 
   _updateEdgesAndVertices = () => {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };

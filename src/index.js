@@ -3,6 +3,8 @@ import debounce from "lodash/debounce";
 import Board from "./models/Board";
 import { getRandomColor, toRGBA } from "./utils/colors";
 import registerServiceWorker from "./registerServiceWorker";
+import "./styles/reset.css";
+import "./styles/styles.css";
 
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");

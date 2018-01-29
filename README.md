@@ -1,3 +1,7 @@
-## Voronoia
+# Voronoia
 
-A game based on Voronoi diagrams
+To run locally:
+```bash
+npm install
+npm start
+```

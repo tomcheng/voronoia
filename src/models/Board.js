@@ -4,13 +4,16 @@ import { Rectangle } from "@thomascheng/canvas-utils";
 import Dot from "./Dot";
 import random from "lodash/random";
 import clamp from "lodash/clamp";
-import { linesAreCollinear } from "../utils/geometry";
+import min from "lodash/min";
+import uniqWith from "lodash/uniqWith";
 import { toRGBA } from "../utils/colors";
 
 const SELECT_THRESHOLD = 20;
+const MINIMUM_DOT_DISTANCE = 50;
 const FINE_TUNE_CONSTANT = 0.25;
 const TAP_TIME_THRESHOLD = 300;
 const TAP_DISTANCE_THRESHOLD = 3;
+const VERTEX_THRESHOLD = 5;
 const VIRTUAL_EDGE_COLOR = "rgba(0,0,0,0.1)";
 
 const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -32,7 +35,7 @@ class Board {
       fill: toRGBA(this.color, 0.1)
     });
 
-    const numDots = random(5, 10);
+    const numDots = random(7, 12);
 
     this.dots = this._generateRandomDots(numDots);
     this.virtualDots = this._generateRandomDots(numDots);
@@ -42,9 +45,15 @@ class Board {
     const virtualDiagram = this.voronoi.compute(this.virtualDots, box);
 
     this.virtualEdges = virtualDiagram.edges.filter(e => e.lSite && e.rSite);
+    this.virtualVertices = this._filterOutOfScreenVertices(
+      this._filterDuplicates(this._filterCorners(virtualDiagram.vertices))
+    );
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
+    this.vertices = this._filterOutOfScreenVertices(
+      this._filterCorners(diagram.vertices)
+    );
+    this.matchedVertices = [];
     this.matchedEdges = [];
-    this.mouseDown = false;
     this.directMove = false;
     this.won = false;
 
@@ -53,34 +62,67 @@ class Board {
 
   _generateRandomDots = num => {
     const dots = [];
-    for (let i = 0; i < num; i++) {
-      dots.push(
-        new Dot({
-          x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
-          y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
-          color: toRGBA(this.color, 1)
-        })
-      );
+
+    while (dots.length < num) {
+      const potentialDot = new Dot({
+        x: random(SELECT_THRESHOLD, this.width - SELECT_THRESHOLD),
+        y: random(SELECT_THRESHOLD, this.height - SELECT_THRESHOLD),
+        color: toRGBA(this.color, 1)
+      });
+
+      if (dots.every(dot => distance(dot, potentialDot) > MINIMUM_DOT_DISTANCE)) {
+        dots.push(potentialDot);
+      }
     }
+
     return dots;
   };
 
-  _updateEdges = () => {
+  _filterCorners = vertices =>
+    vertices.filter(
+      v => ![0, this.width].includes(v.x) || ![0, this.height].includes(v.y)
+    );
+
+  _filterDuplicates = vertices =>
+    uniqWith(
+      vertices,
+      (v1, v2) => Math.abs(v1.x - v2.x) < 0.001 && Math.abs(v1.y - v2.y) < 0.001
+    );
+
+  _filterOutOfScreenVertices = vertices =>
+    vertices.filter(
+      v =>
+        v.x >= -1 &&
+        v.x <= this.width + 1 &&
+        v.y >= -1 &&
+        v.y <= this.height + 1
+    );
+
+  _updateEdgesAndVertices = () => {
     const box = { xl: 0, xr: this.width, yt: 0, yb: this.height };
     const diagram = this.voronoi.compute(this.dots, box);
     this.edges = diagram.edges.filter(e => e.lSite && e.rSite);
-  };
-
-  _updateMatchedEdges = () => {
-    this.matchedEdges = this.edges.filter(edge =>
-      this.virtualEdges.some(ve => linesAreCollinear(ve, edge))
+    this.vertices = this._filterOutOfScreenVertices(
+      this._filterCorners(diagram.vertices)
+    );
+    this.matchedVertices = diagram.vertices.filter(vertex =>
+      this.virtualVertices.some(v => distance(v, vertex) < VERTEX_THRESHOLD)
+    );
+    this.matchedEdges = this.edges.filter(
+      ({ va, vb }) =>
+        this.matchedVertices.includes(va) && this.matchedVertices.includes(vb)
     );
   };
 
   _updateScore = () => {
-    this.onUpdateScore(
-      `${this.matchedEdges.length}/${this.virtualEdges.length}`
-    );
+    const totalDistance = this._filterDuplicates(
+      this.vertices
+    ).reduce((sum, vertex) => {
+      const distances = this.virtualVertices.map(v => distance(v, vertex));
+      return sum + Math.max(Math.ceil(min(distances)) - VERTEX_THRESHOLD, 0);
+    }, 0);
+
+    this.onUpdateScore(totalDistance);
   };
 
   _selectDot = dot => {
@@ -95,7 +137,6 @@ class Board {
   _checkWin = () => this.edges.length === this.matchedEdges.length;
 
   handleMouseDown = ({ x, y }) => {
-    this.mouseDown = true;
     this.mouseDownTime = new Date().getTime();
     const selected = find(
       this.dots,
@@ -121,7 +162,7 @@ class Board {
   };
 
   handleMouseMove = ({ x, y }) => {
-    if (!this.selectedDot || !this.mouseDown) {
+    if (!this.selectedDot) {
       return;
     }
 
@@ -150,13 +191,11 @@ class Board {
       );
     }
 
-    this._updateEdges();
-    this._updateMatchedEdges();
+    this._updateEdgesAndVertices();
     this._updateScore();
   };
 
   handleMouseUp = () => {
-    this.mouseDown = false;
     if (this._checkWin()) {
       if (this.selectedDot) {
         this.selectedDot.selected = false;
@@ -180,6 +219,22 @@ class Board {
         context.lineWidth = 1;
         context.strokeStyle = VIRTUAL_EDGE_COLOR;
         context.stroke();
+      });
+
+      this._filterDuplicates(this.vertices).forEach(vertex => {
+        const distances = this.virtualVertices.map(v => distance(v, vertex));
+        const minDistance = min(distances);
+
+        if (minDistance < 100) {
+          const opacity =
+            minDistance < VERTEX_THRESHOLD ? 1 : (100 - minDistance) / 400;
+          const radius =
+            minDistance < VERTEX_THRESHOLD ? 3 : (minDistance - 5) * 1.3 + 3;
+          context.beginPath();
+          context.arc(vertex.x, vertex.y, radius, 0, 2 * Math.PI);
+          context.fillStyle = toRGBA(this.color, opacity);
+          context.fill();
+        }
       });
     }
 

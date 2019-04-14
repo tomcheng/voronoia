@@ -2,6 +2,9 @@ import { Canvas } from "@thomascheng/canvas-utils";
 import debounce from "lodash/debounce";
 import Board from "./models/Board";
 import { getRandomColor, toRGBA } from "./utils/colors";
+import registerServiceWorker from "./registerServiceWorker";
+import "./styles/reset.css";
+import "./styles/styles.css";
 
 const rootEl = document.getElementById("root");
 const touchEl = document.getElementById("touch");
@@ -11,6 +14,7 @@ const playAgainEl = document.getElementById("play-again");
 const canvas = new Canvas(rootEl);
 
 let primaryColor = getRandomColor();
+let mouseDown = false;
 scoreEl.style.color = toRGBA(primaryColor, 1);
 
 let board = new Board({
@@ -38,15 +42,19 @@ window.addEventListener("resize", debounce(() => {
 }, 300));
 
 touchEl.addEventListener("mousedown", evt => {
+  mouseDown = true;
   board.handleMouseDown({ x: evt.clientX, y: evt.clientY });
 });
 
 touchEl.addEventListener("mousemove", evt => {
-  board.handleMouseMove({ x: evt.clientX, y: evt.clientY });
-  canvas.render();
+  if (mouseDown) {
+    board.handleMouseMove({ x: evt.clientX, y: evt.clientY });
+    canvas.render();
+  }
 });
 
 touchEl.addEventListener("mouseup", () => {
+  mouseDown = false;
   board.handleMouseUp();
 });
 
@@ -101,3 +109,5 @@ function resetBoard() {
   });
   canvas.add(board);
 }
+
+registerServiceWorker();

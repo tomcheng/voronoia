@@ -59,13 +59,12 @@ touchEl.addEventListener("touchstart", evt => {
 });
 
 touchEl.addEventListener("touchmove", evt => {
-  evt.preventDefault();
   board.handleMouseMove({
     x: evt.touches[0].clientX,
     y: evt.touches[0].clientY
   });
   canvas.render();
-});
+}, { passive: true });
 
 touchEl.addEventListener("touchend", evt => {
   evt.preventDefault();

@@ -7,6 +7,15 @@ body, html {
   font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
   height: 100%;
+  overscroll-behvaiour: contain;
+}
+
+html {
+  overflow: hidden;
+}
+
+body {
+  overflow: auto;
 }
 
 #root {
@@ -21,6 +30,7 @@ body, html {
   right: 0;
   bottom: 0;
   left: 0;
+  overscroll-behaviour: contain;
 }
 
 #win {
